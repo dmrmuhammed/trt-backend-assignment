@@ -1,0 +1,9 @@
+{
+  "name": "trt-backend-assignment",
+  "version": "1.0.0",
+  "description": "TRT Backend Assignment Project",
+  "main": "index.js",
+  "repository": "git@github.com:dmrmuhammed/trt-backend-assignment.git",
+  "author": "Muhammed Demir",
+  "license": "MIT"
+}
