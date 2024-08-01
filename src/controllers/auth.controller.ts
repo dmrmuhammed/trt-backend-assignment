@@ -1,27 +1,20 @@
 import express, { Request, Response } from 'express'
 
-import { getUserByEmail, createUser } from '../db/users'
-import { generateSalt, generateHash } from '../helpers'
+import { getUserByEmail, createUser } from '../db/users.model'
+import { generateHash, generateAccessToken } from '../helpers'
 
 export const register = async (req: Request, res: Response) => {
  try {
   const { email, password } = req.body
-  if (!email || !password) {
-   return res.status(400).send('Missing fields')
-  }
+  if (!email || !password) return res.status(400).send('Missing fields')
 
   const emailExists = await getUserByEmail(email)
-  if (emailExists) {
-   return res.status(400).send('Email already exists')
-  }
-
-  const salt = generateSalt()
+  if (emailExists) return res.status(400).send('Email already exists')
 
   const user = await createUser({
    email,
    authentication: {
-    password: generateHash(password, salt),
-    salt,
+    password: generateHash(password),
    },
   })
 
@@ -36,22 +29,15 @@ export const login = async (req: Request, res: Response) => {
  try {
   const { email, password } = req.body
 
-  if (!email || !password) {
-   return res.status(400).send('Missing fields')
-  }
+  if (!email || !password) return res.status(400).send('Missing fields')
 
   const user = await getUserByEmail(email).select('+authentication.salt +authentication.password')
-  if (!user || !user.authentication) {
-   return res.status(403).send('Invalid password or email')
-  }
+  if (!user || !user.authentication) return res.status(403).send('Invalid password or email')
 
-  const hash = generateHash(password, user.authentication.salt)
-  if (hash !== user.authentication.password) {
-   return res.status(403).send('Invalid password or email')
-  }
+  const hash = generateHash(password)
+  if (hash !== user.authentication.password) return res.status(403).send('Invalid password or email')
 
-  const salt = generateSalt()
-  user.authentication.token = generateHash(user._id.toString(), salt)
+  user.authentication.token = generateAccessToken({ id: user._id.toString(), email: user.email })
 
   await user.save()
 
@@ -60,7 +46,7 @@ export const login = async (req: Request, res: Response) => {
    path: '/',
    httpOnly: true,
    secure: false,
-   maxAge: 1000 * 60 * 60 * 24 * 7,
+   maxAge: 1000 * 60 * 60 * 3,
   })
 
   return res.status(200).json(user).end()
