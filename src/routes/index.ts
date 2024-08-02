@@ -1,25 +1,20 @@
-import { Router } from 'express'
+import { Router, Request, Response, Errback, NextFunction } from 'express'
 import auth from './auth'
 import tasks from './tasks'
-import { verifyAccessToken } from '../helpers'
+import { checkAuthentication } from '../middlewares'
 
-export default (): Router => {
- const app = Router()
- auth(app)
+const router: Router = Router()
 
- // JWT Middleware
- app.use((req, res, next) => {
-  const token = req.cookies['trt-backend-auth']
-  if (!token) return res.status(401).send('Unauthorized')
-  try {
-   const user = verifyAccessToken(token)
-   req.body.userId = user.id
-   next()
-  } catch (error) {
-   return res.status(401).send('Unauthorized')
-  }
- })
+router.use('/auth', auth)
+router.use('/tasks', checkAuthentication, tasks)
 
- tasks(app)
- return app
-}
+router.use((err: Errback, req: Request, res: Response, next: NextFunction) => {
+ console.error(err)
+ res.status(500).send('Something went wrong!')
+})
+
+router.get('/', (req: Request, res: Response) => {
+ res.send('Hello, world!')
+})
+
+export default router

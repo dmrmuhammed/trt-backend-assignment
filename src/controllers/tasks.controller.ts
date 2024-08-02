@@ -1,11 +1,20 @@
 import express, { Request, Response } from 'express'
 
 import { create, read, update, remove, getById } from '../db/tasks.model'
+import { ObjectId, SortOrder } from 'mongoose'
 
 export const getUserTasks = async (req: Request, res: Response) => {
  try {
-  const { userId } = req.body
-  const tasks = await read(userId)
+  const {
+   userId,
+   page = 0,
+   limit = 0,
+   sortField = 'createdAt',
+   sortOrder = 1,
+  }: { userId: ObjectId; page: number; limit: number; sortField: string; sortOrder: SortOrder } = req.body
+  if (sortOrder !== 1 && sortOrder !== -1) return res.status(400).send('Invalid sort order')
+  const sort: { [key: string]: SortOrder } = { [sortField]: sortOrder }
+  const tasks = await read(userId, page, limit, sort)
   return res.status(200).json(tasks).end()
  } catch (error) {
   console.log('Something went wrong on getting all tasks', error)
@@ -16,7 +25,7 @@ export const getUserTasks = async (req: Request, res: Response) => {
 export const getTaskById = async (req: Request, res: Response) => {
  try {
   const { id } = req.params
-  const { userId } = req.body
+  const { userId }: { userId: ObjectId } = req.body
   const isOwner = await checkTaskOwnership(id, userId)
   if (!isOwner) return res.status(403).send('Not allowed to get this task')
   const task = await getById(id)
@@ -30,9 +39,11 @@ export const getTaskById = async (req: Request, res: Response) => {
 
 export const createTask = async (req: Request, res: Response) => {
  try {
-  const { title, description, completed, userId } = req.body
+  const { userId, title, description, completed }: { userId: ObjectId; title: string; description?: string; completed?: boolean } = req.body
   if (!title) return res.status(400).send('Title is required')
-  const task = await create({ title, description, completed, userId })
+  let completedAt: Date | undefined = undefined
+  if (completed && completed === true) completedAt = new Date()
+  const task = await create({ userId, title, description, completed, completedAt })
   return res.status(201).json(task).end()
  } catch (error) {
   console.log('Something went wrong on creating a new task', error)
@@ -43,7 +54,7 @@ export const createTask = async (req: Request, res: Response) => {
 export const updateTask = async (req: Request, res: Response) => {
  try {
   const { id } = req.params
-  const { title, description, completed, userId } = req.body
+  const { userId, title, description, completed }: { userId: ObjectId; title: string; description?: string; completed?: boolean } = req.body
   const isOwner = await checkTaskOwnership(id, userId)
   if (!isOwner) return res.status(403).send('Not allowed to update this task')
   const task = await update(id, { title, description, completed })
@@ -57,7 +68,7 @@ export const updateTask = async (req: Request, res: Response) => {
 export const removeTask = async (req: Request, res: Response) => {
  try {
   const { id } = req.params
-  const { userId } = req.body
+  const { userId }: { userId: ObjectId } = req.body
   const isOwner = await checkTaskOwnership(id, userId)
   if (!isOwner) return res.status(403).send('Not allowed to remove this task')
   await remove(id)
@@ -68,8 +79,8 @@ export const removeTask = async (req: Request, res: Response) => {
  }
 }
 
-const checkTaskOwnership = async (id: string, userId: string) => {
+const checkTaskOwnership = async (id: string, userId: ObjectId) => {
  const task = await getById(id)
  if (!task || !task.userId) return false
- return task.userId.toString() === userId
+ return task.userId.toString() === userId.toString()
 }

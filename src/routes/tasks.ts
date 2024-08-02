@@ -1,12 +1,16 @@
-import { Router } from 'express'
+import { Router, Request, Response } from 'express'
 
 import { createTask, getUserTasks, updateTask, removeTask, getTaskById } from '../controllers/tasks.controller'
 
-export default (router: Router) => {
- router.post('/task', createTask)
- router.get('/tasks', getUserTasks)
- router.patch('/task/:id', updateTask)
- router.delete('/task/:id', removeTask)
- router.get('/task/:id', getTaskById)
- return router
-}
+const router: Router = Router()
+
+router.post('/', createTask)
+router.post('/all', getUserTasks)
+router.patch('/:id', updateTask)
+router.delete('/:id', removeTask)
+router.get('/:id', getTaskById)
+
+// Method not allowed
+router.use((req: Request, res: Response) => res.status(405).send('Method not allowed'))
+
+export default router

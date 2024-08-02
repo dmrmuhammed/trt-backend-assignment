@@ -22,7 +22,7 @@ The following API endpoints are available:
 ---
 
 1. Register a new user:
-   `      POST /auth/register`
+   `POST /auth/register`
    - Body:
      - "email": String, Required
      - "password": String, Required
@@ -30,7 +30,7 @@ The following API endpoints are available:
 ---
 
 2. Login an existing user:
-   `      POST /auth/login`
+   `POST /auth/login`
    - Body:
      - "email": String, Required
      - "password": String, Required
@@ -41,14 +41,19 @@ The following API endpoints are available:
 
 ---
 
-1. Retrieve all tasks:
-   `      GET /tasks`
+1. Retrieve all tasks with pagination and sorting:
+   `POST /tasks/all`
    - User must be authenticated.
+   - Body:
+     - "page": Number, Default: 0
+     - "limit": Number, Default: 0
+     - "sortField": String, Default: "createdAt"
+     - "sortOrder": Number, Default: 1 (1 for ascending, -1 for descending)
 
 ---
 
 2. Retrieve a specific task:
-   `      GET /task/:id`
+   `GET /tasks/:id`
    - User must be authenticated.
    - Parameters:
      - "id": String, Required
@@ -56,7 +61,7 @@ The following API endpoints are available:
 ---
 
 3. Create a new task:
-   `      POST /task`
+   `POST /tasks`
    - User must be authenticated.
    - Body:
      - "title": String, Required
@@ -67,7 +72,7 @@ The following API endpoints are available:
 ---
 
 4. Update an existing task:
-   `      PATCH /task/:id`
+   `PATCH /tasks/:id`
    - User must be authenticated.
    - Parameters:
      - "id": String, Required
@@ -80,7 +85,7 @@ The following API endpoints are available:
 ---
 
 5. Delete a task:
-   `      DELETE /task/:id`
+   `DELETE /tasks/:id`
    - User must be authenticated.
    - Parameters:
      - "id": String, Required
